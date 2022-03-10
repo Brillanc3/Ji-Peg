@@ -27,3 +27,6 @@ server_scripts {
 	'@oxmysql/lib/MySQL.lua',
 	'server/*.lua'
 }
+
+export 'Givepay'
+export 'paytime'
