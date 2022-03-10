@@ -69,13 +69,27 @@ updateSalary = function(source)
         end
     end)
     if needtime <= 0 then
-        pay(source)
+        paytime(source)
+    end
+end
+
+Givepay = function(license, price)
+    if price and type(price) == "number" then
+        return MySQL.scalar.await('UPDATE cumultative_salary = cumultative_salary + ? FROM salary WHERE identifier = ?', {price, license})
+    else
+        return "Error"
     end
 end
 
 cumultative_salary = function(source)
-    
+    local license = getLicense(source)
+    return MySQL.scalar.await('SELECT cumultative_salary FROM salary WHERE identifier = ?', {license})
 end
+
+RegisterNetEvent('unh-salarysystems:Givepay')
+AddEventHandler('unh-salarysystems:Givepay', function(source, price)
+    Givepay(getLicense(source), price)
+end)
 
 getLicense = function(source)
     local player = source

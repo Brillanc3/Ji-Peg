@@ -1,11 +1,6 @@
-pay = function()
-    local xPlayers = ESX.GetPlayers()
-    for _, xPlayer in pairs(xPlayers) do
-        local job    		= xPlayer.job.grade_name
-        local salary  		= xPlayer.job.grade_salary + cumultative_salary(xPlayer.license)
-        local license       = xPlayer.license
-        local 
-        if salary > 0 then
-        end
-    end
+paytime = function(source)
+    local _source = source
+    local xPlayer = ESX.GetPlayerFromId(_source)
+    local total_salary = cumultative_salary(_source) + xPlayer.getJob().grade_salary
+    xPlayer.addAccountMoney('bank', total_salary)
 end
