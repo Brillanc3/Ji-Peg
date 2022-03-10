@@ -6,23 +6,23 @@ Citizen.CreateThread(function()
             options = {
                 {
                     icon = 'fas fa-key',
-                    label = "Start/Stop Moteur",
+                    label = Config.lang['start_n_stop_engin_label'],
                     action = function(entity)
                         local inventory = ox_inventory:Search('count', {'vehiclekeys'}, {plate = GetVehicleNumberPlateText(entity)})
                         local vehicleEngine = GetIsVehicleEngineRunning(entity)
                         if inventory and inventory ~= 0 then
                             SetVehicleEngineOn(entity, not vehicleEngine, true, false)
                             if vehicleEngine then
-                                exports['okokNotify']:Alert("Engine Status",
-                                                            "Engine Off", 3000,
+                                exports['okokNotify']:Alert(Config.Lang['start_n_stop_engine_title_notif'],
+                                                            Config.lang['start_n_stop_engin_message'] .. vehicleEngine, 3000,
                                                             'warning')
                             else
-                                exports['okokNotify']:Alert("Engine Status",
-                                                            "Engine On", 3000,
+                                exports['okokNotify']:Alert(Config.Lang['start_n_stop_engine_title_notif'],
+                                                            Config.lang['start_n_stop_engin_message'] .. vehicleEngine , 3000,
                                                             'warning')
                             end
                         else
-                            exports['okokNotify']:Alert("Vehicle Alarm", "Attention, vous n'avez pas les clés du véhicule", 3000, 'error')
+                            exports['okokNotify']:Alert(Config.lang['no_key_title'], Config.lang['no_key_message'], 3000, 'error')
                         end
                     end
                 },
