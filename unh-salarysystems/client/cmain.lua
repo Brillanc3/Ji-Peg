@@ -1,14 +1,12 @@
 local needtime          = 0
 local loop              = false
-local PlayerData        = {}
 local playerLicense     = ""
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(playerData)
-    ESX.PlayerData = playerData
     Citizen.CreateThread(function()
         while true do
-            while playerLicense == "" then
+            while playerLicense == "" do
                 ESX.TriggerServerCallback('esx:getPlayerData', function(data)
                     playerLicense = "license:"..data.identifier
                 end)
