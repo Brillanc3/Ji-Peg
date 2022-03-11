@@ -1,5 +1,5 @@
 local PlayerData        = {}
-
+local ESX               = nil
 Citizen.CreateThread(function ()
     while ESX == nil do
         Citizen.Wait(0)
@@ -9,13 +9,8 @@ end)
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
-    PlayerData = xPlayer
-end)
-
-
-RegisterNetEvent('playerConnecting')
-AddEventHandler('playerConnecting', function()
-    local license = getLicense(source)
+    ESX.PlayerData = xPlayer
+    local license = ESX.GetPlayerData().identifier
     local connection = os.time()
     print("Salary System")
     print("identifier", license)

@@ -1,34 +1,33 @@
 local needtime          = 0
-local loop = false
+local loop              = false
 local PlayerData        = {}
-
-Citizen.CreateThread(function ()
-    while ESX == nil do
-        Citizen.Wait(0)
-        PlayerData = ESX.GetPlayerData()
-    end
-end)
+local playerLicense     = ""
 
 RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function(xPlayer)
-    PlayerData = xPlayer
+AddEventHandler('esx:playerLoaded', function(playerData)
+    ESX.PlayerData = playerData
+    Citizen.CreateThread(function()
+        while true do
+            while playerLicense == "" then
+                ESX.TriggerServerCallback('esx:getPlayerData', function(data)
+                    playerLicense = "license:"..data.identifier
+                end)
+                Citizen.Wait(1)
+            end
+            ESX.TriggerServerCallback("unh-salary:getSalaryData", function(data)
+                if data and data > 0 and not loop then
+                    needtime = data
+                    loop = not loop
+                end
+            end)
+            Citizen.Wait(1000)
+            needtime = needtime - 1
+            print("NeedTime :", needtime)
+            if needtime == 0 then
+                loop = not loop
+                TriggerServerEvent("unh-salarysystems:update", license)
+            end
+        end
+    end)
 end)
 
-Citizen.CreateThread(function()
-    while ESX.IsPlayerLoaded() == false do
-        Citizen.Wait(0)
-    end
-    while true do
-        ESX.TriggerServerCallback("unh-salary:getSalaryData", function(data)
-            if data and data > 0 and not loop then
-                needtime = data
-                loop = true
-            end
-        end)
-        Wait(1000)
-        needtime = needtime - 1
-        if needtime == 0 then
-            TriggerServerEvent("unh-salarysystems:update")
-        end
-    end
-end)
