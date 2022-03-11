@@ -1,31 +1,35 @@
-local needtime          = 0
-local loop              = false
-local playerLicense     = ""
+local needtime = 0
+local loop, connected = false, false
+local playerLicense = ""
+local needtime = nil
 
-RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function(playerData)
-    Citizen.CreateThread(function()
-        while true do
-            while playerLicense == "" do
-                ESX.TriggerServerCallback('esx:getPlayerData', function(data)
-                    playerLicense = "license:"..data.identifier
-                end)
-                Citizen.Wait(1)
-            end
+Citizen.CreateThread(function()
+    while true do
+        while playerLicense == "" do
+            ESX.TriggerServerCallback('esx:getPlayerData', function(data)
+                playerLicense = "license:" .. data.identifier
+                connected = true
+            end)
+            Citizen.Wait(0)
+        end
+        if connected then
+            TriggerServerEvent("unh-salarysystems:connected", playerLicense)
+            connected = not connected
+        end
+        if needtime == nil or needtime <= 0 then
             ESX.TriggerServerCallback("unh-salary:getSalaryData", function(data)
-                if data and data > 0 and not loop then
+                while needtime == nil do
                     needtime = data
-                    loop = not loop
+                    Citizen.Wait(0)
                 end
             end)
-            Citizen.Wait(1000)
-            needtime = needtime - 1
-            print("NeedTime :", needtime)
-            if needtime == 0 then
-                loop = not loop
-                TriggerServerEvent("unh-salarysystems:update", license)
-            end
         end
-    end)
+        Citizen.Wait(1000)
+        needtime = needtime - 1
+        print("NeedTime :", needtime)
+        if needtime <= 0 then
+            TriggerServerEvent("unh-salarysystems:update", playerLicense)
+            needtime = 3600
+        end
+    end
 end)
-

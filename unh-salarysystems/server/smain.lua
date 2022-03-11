@@ -1,6 +1,47 @@
-RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function(xPlayer)
-    local license = ESX.GetPlayerData().identifier
+RegisterNetEvent('playerDropped')
+AddEventHandler('playerDropped', function(reason)
+    local license = getLicense(source)
+    local uptodate = 'UPDATE salary SET deconnection = ?, needtime = ? WHERE identifier = ?'
+    local deconnection = os.time()
+    local salarytime = MySQL.scalar.await('SELECT salarytime FROM salary WHERE identifier = ?', {license})
+    local needtime = salarytime - deconnection
+
+    MySQL.Async.prepare(uptodate, {{os.time(), needtime, license}}, function(affectedRows)
+        if affectedRows == 1 then
+            print(('[^2INFO^7] Saved player "^5%s^7"'):format(license))
+        end
+        if cb then
+            cb()
+        end
+    end)
+end)
+
+updateSalary = function(license)
+    local uptodate = 'UPDATE salary SET needtime = ? WHERE identifier = ?'
+    local salarytime = MySQL.scalar.await('SELECT salarytime FROM salary WHERE identifier = ?', {license})
+    local needtime = salarytime - os.time()
+    MySQL.Async.prepare(uptodate, {{needtime, license}}, function(affectedRows)
+        if cb then
+            cb()
+        end
+    end)
+    print(needtime, license)
+    if needtime <= 0 then
+        paytime(license)
+    end
+end
+
+Givepay = function(license, price)
+    if price and type(price) == "number" then
+        MySQL.scalar.await('UPDATE cumultative_salary = cumultative_salary + ? FROM salary WHERE identifier = ?', {price, license})
+    else
+        print("Error")
+    end
+end
+
+RegisterServerEvent("unh-salarysystems:connected")
+AddEventHandler("unh-salarysystems:connected", function(playerLicense)
+    local license = playerLicense
     local connection = os.time()
     print("Salary System")
     print("identifier", license)
@@ -32,51 +73,10 @@ AddEventHandler('esx:playerLoaded', function(xPlayer)
     end
 end)
 
-RegisterNetEvent('playerDropped')
-AddEventHandler('playerDropped', function(reason)
-    local license = getLicense(source)
-    local uptodate = 'UPDATE salary SET deconnection = ?, needtime = ? WHERE identifier = ?'
-    local deconnection = os.time()
-    local salarytime = MySQL.scalar.await('SELECT salarytime FROM salary WHERE identifier = ?', {license})
-    local needtime = salarytime - deconnection
-
-    MySQL.Async.prepare(uptodate, {{os.time(), needtime, license}}, function(affectedRows)
-        if affectedRows == 1 then
-            print(('[^2INFO^7] Saved player "^5%s^7"'):format(license))
-        end
-        if cb then
-            cb()
-        end
-    end)
-end)
-
-updateSalary = function(license)
-    local uptodate = 'UPDATE salary SET needtime = ? WHERE identifier = ?'
-    local salarytime = MySQL.scalar.await('SELECT salarytime FROM salary WHERE identifier = ?', {license})
-    local needtime = salarytime - os.time()
-    MySQL.Async.prepare(uptodate, {{needtime, license}}, function(affectedRows)
-        if cb then
-            cb()
-        end
-    end)
-    print(needtime, license)
-    if needtime <= 2 then
-        paytime(license)
-    end
-end
-
-Givepay = function(license, price)
-    if price and type(price) == "number" then
-        MySQL.scalar.await('UPDATE cumultative_salary = cumultative_salary + ? FROM salary WHERE identifier = ?', {price, license})
-    else
-        print("Error")
-    end
-end
-
 RegisterServerEvent("unh-salarysystems:update")
-AddEventHandler("unh-salarysystems:update", function(source)
-    local source = source
-    local license = getLicense(source)
+AddEventHandler("unh-salarysystems:update", function(playerLicense)
+    local _source = source
+    local license = playerLicense
     updateSalary(license)
 end)
 
@@ -91,8 +91,8 @@ AddEventHandler('unh-salarysystems:Givepay', function(source, price)
 end)
 
 getLicense = function(source)
-    local player = source
-    local playerIdentifier = GetPlayerIdentifiers(player)
+    local source = source
+    local playerIdentifier = GetPlayerIdentifiers(source)
     local license = nil
     for k, v in ipairs(playerIdentifier) do
         if string.match(v, "license:") then
