@@ -1,8 +1,17 @@
-Citizen.CreateThread(function()
-    while true do
-      Citizen.Wait(1000) -- 1second
+local PlayerData        = {}
+
+Citizen.CreateThread(function ()
+    while ESX == nil do
+        Citizen.Wait(0)
+        PlayerData = ESX.GetPlayerData()
     end
 end)
+
+RegisterNetEvent('esx:playerLoaded')
+AddEventHandler('esx:playerLoaded', function(xPlayer)
+    PlayerData = xPlayer
+end)
+
 
 RegisterNetEvent('playerConnecting')
 AddEventHandler('playerConnecting', function()
@@ -38,8 +47,6 @@ AddEventHandler('playerConnecting', function()
     end
 end)
 
-
-
 RegisterNetEvent('playerDropped')
 AddEventHandler('playerDropped', function(reason)
     local license = getLicense(source)
@@ -50,7 +57,7 @@ AddEventHandler('playerDropped', function(reason)
 
     MySQL.Async.prepare(uptodate, {{os.time(), needtime, license}}, function(affectedRows)
         if affectedRows == 1 then
-            print(('[^2INFO^7] Saved player ^5"%s^7"'):format(license))
+            print(('[^2INFO^7] Saved player "^5%s^7"'):format(license))
         end
         if cb then
             cb()
@@ -58,8 +65,7 @@ AddEventHandler('playerDropped', function(reason)
     end)
 end)
 
-updateSalary = function(source)
-    local license = getLicense(source)
+updateSalary = function(license)
     local uptodate = 'UPDATE salary SET needtime = ? WHERE identifier = ?'
     local salarytime = MySQL.scalar.await('SELECT salarytime FROM salary WHERE identifier = ?', {license})
     local needtime = salarytime - os.time()
@@ -68,22 +74,30 @@ updateSalary = function(source)
             cb()
         end
     end)
-    if needtime <= 0 then
-        paytime(source)
+    print(needtime, license)
+    if needtime <= 2 then
+        paytime(license)
     end
 end
 
 Givepay = function(license, price)
     if price and type(price) == "number" then
-        return MySQL.scalar.await('UPDATE cumultative_salary = cumultative_salary + ? FROM salary WHERE identifier = ?', {price, license})
+        MySQL.scalar.await('UPDATE cumultative_salary = cumultative_salary + ? FROM salary WHERE identifier = ?', {price, license})
     else
-        return "Error"
+        print("Error")
     end
 end
 
-cumultative_salary = function(source)
+RegisterServerEvent("unh-salarysystems:update")
+AddEventHandler("unh-salarysystems:update", function(source)
+    local source = source
     local license = getLicense(source)
-    return MySQL.scalar.await('SELECT cumultative_salary FROM salary WHERE identifier = ?', {license})
+    updateSalary(license)
+end)
+
+cumultative_salary = function(license)
+    local csalary = MySQL.scalar.await('SELECT cumultative_salary FROM salary WHERE identifier = ?', {license})
+    return csalary
 end
 
 RegisterNetEvent('unh-salarysystems:Givepay')
@@ -113,13 +127,19 @@ getTime = function(source)
     return h .."h" ..m .."m" .. s .."s"
 end
 
-RegisterServerEvent("unh-salary/update")
-AddEventHandler("unh-salary/update", function()
-    local source = source
-    updateSalary(source)
-end)
+getNeedTimeToTimestamp = function(license)
+    local needtimetotimestamp = MySQL.scalar.await('SELECT needtime FROM salary WHERE identifier = ?', {license})
+    return needtimetotimestamp
+end
+
+paytime = function(license)
+    local total_salary = cumultative_salary(license)
+    print("total_salary : ", total_salary)
+    --xPlayer.addAccountMoney('bank', tonumber(total_salary))
+    MySQL.update.await('UPDATE salary SET cumultative_salary = ?, needtime = ?, salarytime = ? WHERE identifier = ? ', {tonumber(0), tonumber(3600), os.time() + 3600, license})
+end
 
 RegisterCommand("paycheck", function(source,args)
-    updateSalary(source)
+    updateSalary(getLicense(source))
     TriggerClientEvent('okokNotify:Alert', source, "Salaire", getTime(source).. " à attendre.", 6000, 'info')
 end, true)

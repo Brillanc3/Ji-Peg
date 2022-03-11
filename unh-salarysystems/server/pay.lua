@@ -1,8 +1,20 @@
-paytime = function(source)
-    local _source = source
-    local license = getLicense(_source)
-    local xPlayer = ESX.GetPlayerFromId(_source)
-    local total_salary = cumultative_salary(_source) + xPlayer.getJob().grade_salary
-    xPlayer.addAccountMoney('bank', total_salary)
-    MySQL.scalar.await('UPDATE cumultative_salary = ? FROM salary WHERE identifier = ?', {0, license})
-end
+ESX.RegisterServerCallback("unh-salary:getSalaryData", function(src, cb)
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if xPlayer then
+        local needtime = getNeedTimeToTimestamp("license:"..xPlayer.getIdentifier())
+        cb(needtime)
+    end
+end)
+
+
+-- CreateThread(function()
+--     while true do
+--         Wait(1000)
+--         local xPlayers = ESX.GetExtendedPlayers()
+-- 		for _, xPlayer in pairs(xPlayers) do
+--             local licence = "license:"..xPlayer.getIdentifier()
+--             print("license:" .. licence)
+--             updateSalary("license:"..xPlayer.getIdentifier())
+--         end
+--     end
+-- end)
